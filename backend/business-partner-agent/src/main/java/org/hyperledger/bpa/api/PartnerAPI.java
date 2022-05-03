@@ -47,6 +47,7 @@ public class PartnerAPI {
     private Long updatedAt;
     private Long lastSeen;
     private Boolean trustPing;
+    private String invitationMsgId;
     private Boolean valid;
     private Boolean ariesSupport;
     private Boolean incoming;
@@ -96,6 +97,7 @@ public class PartnerAPI {
                 .setState(from.getState())
                 .setStateToTimestamp(from.getStateToTimestamp() != null ? from.getStateToTimestamp().toApi() : null)
                 .setTrustPing(from.getTrustPing())
+                .setInvitationMsgId(from.getInvitationMsgId())
                 .setAlias(from.getAlias())
                 .setLabel(from.getLabel())
                 .setDid(from.getDid())
