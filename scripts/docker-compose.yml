@@ -164,9 +164,96 @@ services:
     volumes:
       - bpa-wallet-db2:/var/lib/postgresql/data 
 
+
+  #######
+  # Business Partner 3 (only started with "--profile third_bpa")
+  #######
+  bpa3:
+    profiles:
+      - third_bpa
+    image: ghcr.io/hyperledger-labs/business-partner-agent-new:edge
+    depends_on:
+      -  bpa-agent3
+    environment:
+      JAVA_OPTS: >
+        -Dbpa.acapy.url=http://bpa-agent3:${ACAPY3_ADMIN_PORT}
+        -Dbpa.acapy.apiKey=${ACAPY_ADMIN_URL_API_KEY}
+        -Dmicronaut.security.enabled=${BPA_SECURITY_ENABLED}
+        -Dmicronaut.server.port=${BPA3_PORT}
+        -Dmicronaut.config.files=${BPA_CONFIG_FILES}
+        -Dbpa.pg.url=jdbc:postgresql://${POSTGRESQL3_HOST}/${POSTGRESQL_USER}
+        -Dbpa.pg.username=${POSTGRESQL_USER}
+        -Dbpa.pg.password=${POSTGRESQL_PASSWORD}
+        -Dbpa.host=${BPA3_HOST}
+        -Dbpa.scheme=${BPA_SCHEME}
+      BPA_WEB_MODE: ${BPA_WEB_MODE}
+      BPA_LEDGER_BROWSER: ${BPA_LEDGER_BROWSER}
+      BPA_BOOTSTRAP_UN: ${BPA_BOOTSTRAP_UN}
+      BPA_BOOTSTRAP_PW: ${BPA_BOOTSTRAP_PW}
+      ACAPY_ENDPOINT: ${ACAPY3_ENDPOINT}
+      AGENT_NAME: ${AGENT3_NAME}
+      BPA_IMPRINT_URL: ${BPA_IMPRINT_URL}
+      BPA_PRIVACY_POLICY_URL: ${BPA_PRIVACY_POLICY_URL}
+      BPA_CREDDEF_REVOCATION_REGISTRY_SIZE: ${BPA_CREDDEF_REVOCATION_REGISTRY_SIZE}
+      BPA_WEBHOOK_KEY: ${BPA_WEBHOOK_KEY}
+      # MAIL_USERNAME: ${MAIL_USERNAME}
+      # MAILJET_API_KEY: ${MAILJET_API_KEY}
+      # MAILJET_API_SECRET: ${MAILJET_API_SECRET}
+    ports:
+      - "${BPA3_PORT}:${BPA3_PORT}"
+    restart: always
+  bpa-agent3:
+    profiles:
+      - third_bpa
+    image: bcgovimages/aries-cloudagent:py36-1.16-1_0.7.4
+    ports:
+      - ${ACAPY3_ADMIN_PORT}:${ACAPY3_ADMIN_PORT}
+      - ${ACAPY3_HTTP_PORT}:${ACAPY3_HTTP_PORT}
+    depends_on:
+      - bpa-wallet-db3
+    entrypoint: /bin/bash
+    command: [
+        "-c",
+        "sleep 15;
+        aca-py start \
+        --arg-file acapy-static-args.yml \
+        --inbound-transport http '0.0.0.0' ${ACAPY3_HTTP_PORT} \
+        --webhook-url ${BPA3_WEBHOOK_URL}#${BPA_WEBHOOK_KEY} \
+        --genesis-url '${ACAPY_GENESIS_URL}' \
+        --endpoint ${ACAPY3_ENDPOINT} \
+        --wallet-name '${ACAPY_WALLET_DATABASE}' \
+        --wallet-key '${ACAPY_WALLET_ENCRYPTION_KEY}' \
+        --wallet-storage-type '${ACAPY_WALLET_TYPE}' \
+        --wallet-storage-config '{\"url\":\"${POSTGRESQL3_HOST}:5432\",\"max_connections\":5}' \
+        --wallet-storage-creds '{\"account\":\"${POSTGRESQL_USER}\",\"password\":\"${POSTGRESQL_PASSWORD}\",\"admin_account\":\"${POSTGRESQL_USER}\",\"admin_password\":\"${POSTGRESQL_PASSWORD}\"}' \
+        --seed '${ACAPY_SEED3}' \
+        --admin '0.0.0.0' ${ACAPY3_ADMIN_PORT} \
+        --label '${AGENT3_NAME}' \
+        ${ACAPY_ADMIN_CONFIG} \
+        ${ACAPY_READ_ONLY_MODE} \
+        ${ACAPY_TAILS_BASE_URL} \
+        ${ACAPY_TAILS_UPLOAD_URL} \
+        "
+    ]
+    volumes:
+      - "./acapy-static-args.yml:/home/indy/acapy-static-args.yml"
+      - "./genesis-transaction-list.yml:/home/indy/genesis-transaction-list.yml"
+  bpa-wallet-db3:
+    profiles:
+      - third_bpa
+    image: "postgres:12-alpine"
+    environment:
+      - POSTGRES_USER=${POSTGRESQL_USER}
+      - POSTGRES_PASSWORD=${POSTGRESQL_PASSWORD}
+    ports:
+      - ${POSTGRESQL3_PORT}:5432
+    volumes:
+      - bpa-wallet-db3:/var/lib/postgresql/data 
+
 #######
 # Volumes
 #######
 volumes:
   bpa-wallet-db1:
   bpa-wallet-db2:
+  bpa-wallet-db3:

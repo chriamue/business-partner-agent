@@ -17,3 +17,9 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
+
+  bpa3:
+    image: ghcr.io/hyperledger-labs/business-partner-agent:local
+    build:
+      context: ..
+      dockerfile: Dockerfile
